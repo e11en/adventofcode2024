@@ -40,4 +40,21 @@ func main() {
 	}
 
 	fmt.Println("Total distance:", totalDistance)
+
+	// Get all the distances
+	similarity := 0
+	for i := range leftColumn {
+		baseNumber := leftColumn[i]
+		counter := 0
+
+		// Count same values
+		for _, num := range rightColumn {
+			if num == baseNumber {
+				counter++
+			}
+		}
+		similarity = similarity + (baseNumber * counter)
+	}
+
+	fmt.Println("Score:", similarity)
 }
