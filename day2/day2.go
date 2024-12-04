@@ -1,57 +1,115 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
 )
 
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+func Abs(x int) int {
+  if x >= 0 {
+    return x
+  } else {
+    return -x
+  }
+}
+
+func IsSafeSequence(sequence []int) bool {
+  // Part 1
+  if len(sequence) < 2 { return true }
+  
+  isAscending := sequence[1] - sequence[0] > 0
+  pastNumber := sequence[0]
+
+  for _, currentNumber := range sequence[1:] {
+    grad := currentNumber - pastNumber
+
+    if grad == 0 {
+      return false // neither an increase or a decrease
+    } else if (grad > 0 && !isAscending) || (grad < 0 && isAscending) { // ascending or desecnding case
+      return false // wrong direction
+    }
+    if !(Abs(grad) >= 1 && Abs(grad) <= 3) {
+      return false // an increase / derease of more than 3
+    }
+
+    pastNumber = currentNumber
+  }
+
+  return true
+}
+
+func SliceAt(slice []int, index int) []int {
+  var s []int
+	
+	s = append(s, slice[:index]...)
+	s = append(s, slice[index+1:]...)
+	
+	return s
+}
+
+func IsSafeSequenceDamped(sequence []int) bool {
+  // Part 2
+  if len(sequence) < 2 { return true }
+
+  isSafe := IsSafeSequence(sequence)
+
+  if !isSafe {
+    isNewSafe := false
+    for i := 0 ; i < len(sequence); i++ {
+      newSlice := SliceAt(sequence, i)
+
+      if IsSafeSequence(newSlice) {
+        isNewSafe = true
+        break
+      }
+    }
+
+    if !isNewSafe {
+      return false
+    }
+  }
+
+  return true
+}
+
+func DetectUnusualSequence(rawInput string) int {
+  splitByLine := strings.Split(rawInput, "\n")
+
+  safeReports := 0
+
+  for _, line := range splitByLine {
+    splitBySpace := strings.Split(line, " ")
+
+    numLevels := make([]int, len(splitBySpace))
+
+    for i := 0; i < len(splitBySpace); i++ {
+      intValue, err := strconv.Atoi(splitBySpace[i])
+      check(err)
+      numLevels[i] = intValue
+    }
+
+    // if IsSafeSequence(numLevels) {
+    if IsSafeSequenceDamped(numLevels) {
+      safeReports += 1
+    }
+  }
+
+  return safeReports
+}
+
 func main() {
-	// Open the input file
-	file, err := os.Open("levels.txt")
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
-	}
-	defer file.Close()
+	b1, err := os.ReadFile("levels.txt")
+  check(err)
 
-	// Read the file content line by line
-	scanner := bufio.NewScanner(file)
-	var content []string
-	for scanner.Scan() {
-		content = append(content, scanner.Text())
-	}
+	data := string(b1)
 
-	counter := 0
-
-	// Process each report
-	for _, report := range content {
-		// Parse the values in the report
-		strValues := strings.Fields(report)
-		var values []int
-		for _, v := range strValues {
-			num, _ := strconv.Atoi(v)
-			values = append(values, num)
-		}
-
-		// Initialize safepos and safeneg sets
-		safepos := map[int]struct{}{1: {}, 2: {}, 3: {}}
-		safeneg := map[int]struct{}{-1: {}, -2: {}, -3: {}}
-
-		// Check the differences between consecutive values
-		for i := 1; i < len(values); i++ {
-			diff := values[i] - values[i-1]
-			safepos[diff] = struct{}{}
-			safeneg[diff] = struct{}{}
-		}
-
-		// If either set has exactly 3 unique elements, increment the answer
-		if len(safepos) == 3 || len(safeneg) == 3 {
-			counter++
-		}
-	}
-
-	fmt.Println(counter)
+	fmt.Println(DetectUnusualSequence(data))
 }
